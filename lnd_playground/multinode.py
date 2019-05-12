@@ -1,4 +1,4 @@
-from paths import NODE_PATH, LND_PATH, LNCLI_PATH
+from paths import NODE_PATH, LND_PATH, LNCLI_PATH, MASTER_NODE_PATH
 import shutil
 import subprocess
 from time import sleep
@@ -9,8 +9,8 @@ log = logme.log(scope="module", name="node_runner")
 LOGLEVEL = log.logger.master_level
 
 
-def create_node_folder(name):
-    node_folder = NODE_PATH / name / ".lnd"
+def create_node_folder(path):
+    node_folder = path / ".lnd"
     return node_folder
 
 
@@ -25,6 +25,8 @@ def create_node_command(node_folder, port, rpcport, restport):
         f"--listen=localhost:{port}",
         f"--rpclisten=localhost:{rpcport}",
         f"--restlisten=localhost:{restport}",
+        # "--no-macaroons",
+        "--debuglevel=debug",
     ]
     print(lnd_cmd)
     return lnd_cmd
@@ -35,6 +37,31 @@ def clean_line(line):
     cleaned = " ".join(lines[2:])
     return cleaned
 
+
+procs = list()
+nodes = [n for n in NODE_PATH.glob("*") if n != MASTER_NODE_PATH]
+nodes = list(sorted(nodes))
+for idx, node_loc in enumerate(nodes):
+    folder = create_node_folder(node_loc)
+    port = 9000 + idx
+    rpcport = 10000 + idx
+    restport = 8000 + idx
+    cmd = create_node_command(folder, port, rpcport, restport)
+    procs.append(subprocess.Popen(cmd, stdout=subprocess.PIPE))
+
+while True:
+    for proc in procs:
+        name = proc.args[5].split("/")[-2]
+        proc.poll()
+        line = str(proc.stdout.readline())
+        print(f"{name}: ", line)
+        if proc.returncode:
+            proc.terminate()
+
+for proc in procs:
+    proc.terminate()
+
+exit()
 
 fldr = create_node_folder("alice")
 lnd_cmd_alice = create_node_command(fldr, 9000, 10000, 8000)
