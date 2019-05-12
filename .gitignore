@@ -92,5 +92,5 @@ ENV/
 *.pkl
 
 # Project Specific
-bin/
+bin/lnd*
 nodes/

@@ -29,8 +29,9 @@ class FileExtractionTask(luigi.Task):
 
     def run(self):
         log.info("Extracting LND.")
-        with tarfile.open(self.input().path) as tar:
-            tar.extractall(BIN_PATH)
+        tar = tarfile.open(self.input().path)
+        tar.extractall(BIN_PATH)
+        tar.close()
 
         for p in self.output():
             print(Path(p.path).exists())
