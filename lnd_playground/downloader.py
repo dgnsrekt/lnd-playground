@@ -63,6 +63,12 @@ def clean_up_lightning_network_daemon_tools():
         DOWNLOAD_FILE_PATH.unlink()
 
 
-#
-clean_up_lightning_network_daemon_tools()
-download_lightning_network_daemon_tools()
+def main():
+    clean_up_lightning_network_daemon_tools()
+
+    if not download_lightning_network_daemon_tools():
+        clean_up_lightning_network_daemon_tools()
+
+
+if __name__ == "__main__":
+    main()
