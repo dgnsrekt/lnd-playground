@@ -92,5 +92,6 @@ ENV/
 *.pkl
 
 # Project Specific
-bin/lnd*
 nodes/
+bin/
+*.tar.gz
