@@ -4,47 +4,65 @@ import wget
 import tarfile
 from pathlib import Path
 
-from paths import BIN_PATH, LND_ZIP_FILENAME, LND_URL, LND_PATH, LNCLI_PATH
+from paths import ROOT_PATH, BIN_PATH, DOWNLOAD_URL, DOWNLOAD_FILE_PATH, EXTRACTED_FOLDER_PATH
 
 log = logme.log(scope="module", name="downloader")
 
 
-class DownloadTask(luigi.Task):
+class DownloadFileTask(luigi.Task):
     def output(self):
-        return luigi.LocalTarget(str(BIN_PATH / LND_ZIP_FILENAME))
+        return luigi.LocalTarget(str(DOWNLOAD_FILE_PATH))
 
     def run(self):
         log.info("Downloading LND.")
-        wget.download(LND_URL, self.output().path)
+        wget.download(DOWNLOAD_URL, self.output().path)
 
 
-class FileExtractionTask(luigi.Task):
+class ExtractFilesTask(luigi.Task):
     def requires(self):
-        return DownloadTask()
+        return DownloadFileTask()
 
     def output(self):
-        paths = [LND_PATH, LNCLI_PATH]
-        paths = [luigi.LocalTarget(str(path)) for path in paths]
-        return paths
+        return luigi.LocalTarget(str(EXTRACTED_FOLDER_PATH))
 
     def run(self):
         log.info("Extracting LND.")
-        tar = tarfile.open(self.input().path)
-        tar.extractall(BIN_PATH)
-        tar.close()
+        with tarfile.open(self.input().path) as tar:
+            tar.extractall(ROOT_PATH)
 
-        for p in self.output():
-            print(Path(p.path).exists())
+        assert Path(self.output().path).exists()
 
 
-class DownloadExtractWrapper(luigi.WrapperTask):
+class RenameFolderTask(luigi.Task):
     def requires(self):
-        return FileExtractionTask()
+        return ExtractFilesTask()
+
+    def output(self):
+        return luigi.LocalTarget(str(BIN_PATH))
+
+    def run(self):
+        Path(self.input().path).replace(BIN_PATH)
 
 
-def main():
-    luigi.build([DownloadExtractWrapper()], local_scheduler=True)
+class DownloaderPipeline(luigi.WrapperTask):
+    def requires(self):
+        return RenameFolderTask()
 
 
-if __name__ == "__main__":
-    main()
+def download_lightning_network_daemon_tools():
+    return luigi.build([DownloaderPipeline()], local_scheduler=True)
+
+
+def clean_up_lightning_network_daemon_tools():
+    if EXTRACTED_FOLDER_PATH.exists():
+        for file in EXTRACTED_FOLDER_PATH.glob("*"):
+            file.unlink()
+        EXTRACTED_FOLDER_PATH.rmdir()
+
+    if DOWNLOAD_FILE_PATH.exists():
+        DOWNLOAD_FILE_PATH.unlink()
+
+
+#
+clean_up_lightning_network_daemon_tools()
+download_lightning_network_daemon_tools()
