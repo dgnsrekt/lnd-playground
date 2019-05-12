@@ -2,7 +2,6 @@ from pathlib import Path
 
 ROOT_PATH = Path(__file__).parent.parent
 BIN_PATH = ROOT_PATH / "bin"
-NODE_PATH = ROOT_PATH / "nodes"
 
 DOWNLOAD_URL = "https://github.com/lightningnetwork/lnd/releases/download/v0.6.1-beta/lnd-linux-amd64-v0.6.1-beta.tar.gz"
 
@@ -16,6 +15,9 @@ LND_PATH = BIN_PATH / "lnd"
 LNCLI_PATH = BIN_PATH / "lncli"
 
 # LND_CONFIG = ROOT_PATH / "lnd.conf"
+NODE_PATH = ROOT_PATH / "nodes"
+MASTER_NODE_PATH = NODE_PATH / "master"
+MASTER_NODE_LNDDIR_PATH = MASTER_NODE_PATH / ".lnd"
 
 
 def check_paths_status():
